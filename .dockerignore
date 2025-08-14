@@ -1,0 +1,26 @@
+# Git files
+.git
+.gitignore
+
+# Documentation
+*.md
+design.md
+requirements.md
+
+# Test files
+*_test.go
+
+# Build artifacts
+bin/
+dist/
+
+# IDE
+.idea/
+.vscode/
+
+# Kubernetes manifests
+k8s/
+*.yaml
+
+# GitHub
+.github/

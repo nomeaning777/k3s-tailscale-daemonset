@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: tailscale-subnet-router
+  namespace: kube-system
+  labels:
+    app: tailscale-subnet-router
+spec:
+  selector:
+    matchLabels:
+      app: tailscale-subnet-router
+  template:
+    metadata:
+      labels:
+        app: tailscale-subnet-router
+    spec:
+      hostNetwork: true
+      serviceAccountName: tailscale-subnet-router
+      containers:
+      - name: subnet-router
+        image: ghcr.io/nomeaning777/k3s-tailscale-daemonset:latest
+        imagePullPolicy: Always
+        env:
+        - name: CONFIG_PATH
+          value: "/config/config.yaml"
+        - name: HEALTH_PORT
+          value: "8080"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: RECONCILE_INTERVAL
+          value: "60s"
+        - name: HEALTH_TIMEOUT
+          value: "90s"
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+        volumeMounts:
+        - name: tailscale-socket
+          mountPath: /var/run/tailscale
+        - name: config
+          mountPath: /config
+          readOnly: true
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: tailscale-socket
+        hostPath:
+          path: /var/run/tailscale
+          type: Directory
+      - name: config
+        configMap:
+          name: tailscale-routes
+      priorityClassName: system-node-critical
+      tolerations:
+      - operator: Exists

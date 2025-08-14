@@ -1,0 +1,27 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install mise
+      uses: jdx/mise-action@v2
+      with:
+        experimental: true
+    
+    - name: Run golangci-lint
+      run: mise run lint
+    
+    - name: Check go mod tidy
+      run: |
+        mise run tidy
+        git diff --exit-code go.mod go.sum

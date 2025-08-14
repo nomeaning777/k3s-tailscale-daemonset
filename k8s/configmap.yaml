@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tailscale-routes
+  namespace: kube-system
+data:
+  config.yaml: |
+    routes:
+      - "192.168.1.1/32"

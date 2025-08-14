@@ -1,0 +1,67 @@
+[tools]
+go = "1.24.5"
+golangci-lint = "2.4.0"
+"go:golang.org/x/tools/cmd/goimports" = "latest"
+
+[settings]
+experimental = true
+
+[tasks.build]
+description = "Build the binary"
+run = "go build -o bin/k3s-tailscale-daemonset ./cmd"
+sources = ["go.mod", "go.sum", "**/*.go"]
+outputs = ["bin/k3s-tailscale-daemonset"]
+
+[tasks.test]
+description = "Run tests"
+run = "go test -v ./..."
+sources = ["go.mod", "go.sum", "**/*.go"]
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run --verbose"
+sources = ["go.mod", "go.sum", "**/*.go", ".golangci.yml"]
+
+[tasks.fmt]
+description = "Format code with goimports and golangci-lint"
+run = [
+  "goimports -w .",
+  "golangci-lint fmt"
+]
+
+[tasks.tidy]
+description = "Run go mod tidy"
+run = "go mod tidy"
+
+[tasks.docker-build]
+description = "Build Docker image"
+alias = "docker"
+run = '''
+IMAGE_NAME="${IMAGE_NAME:-k3s-tailscale-daemonset}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
+echo "Building Docker image ${IMAGE_NAME}:${IMAGE_TAG}..."
+docker build -t "${IMAGE_NAME}:${IMAGE_TAG}" .
+'''
+
+[tasks.docker-buildx]
+description = "Build multi-arch Docker image with buildx"
+depends = ["test", "lint"]
+run = '''
+IMAGE_NAME="${IMAGE_NAME:-k3s-tailscale-daemonset}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
+PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64,linux/arm/v7}"
+echo "Building multi-arch Docker image ${IMAGE_NAME}:${IMAGE_TAG}..."
+docker buildx build \
+  --platform "${PLATFORMS}" \
+  -t "${IMAGE_NAME}:${IMAGE_TAG}" \
+  .
+'''
+
+[tasks.ci]
+description = "Run CI tasks"
+depends = ["fmt", "lint", "test", "build"]
+
+[tasks.release]
+description = "Create a new release"
+depends = ["ci"]
+run = "echo 'Ready for release!'"
