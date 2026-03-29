@@ -1,6 +1,6 @@
 module github.com/nomeaning777/k3s-tailscale-daemonset
 
-go 1.24.5
+go 1.24.9
 
 require (
 	github.com/vishvananda/netlink v1.3.1
